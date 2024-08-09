@@ -1,0 +1,18 @@
+# parameters for Real Time prediction.
+
+PATH:
+  MODEL_PATH: ./results/LSTM_100ms_h128_b64_2layer.pth
+HYPERPARAMS:
+  MODELTYPE: 'LSTM'
+  HIDDEN_SIZE: 128
+  NUM_LAYERS: 2
+  NUM_CLASSES: 4
+  BATCH_SIZE: 64
+  NUM_EPOCHS: 4
+  LABEL_CLASS: ['base','idling', 'cutting', 'hardcutting']
+FEATUREPARAMS:
+  SAMPLING_RATE: 44100
+  NUM_CEPSTRAL_COEFFICIENTS: 40
+  HOP_LENGTH: 512 
+  LEN_WINDOW: 2048
+  CHUNK: 4410 # 50ms -> 2205, 100ms -> 4410 same as sample per frame

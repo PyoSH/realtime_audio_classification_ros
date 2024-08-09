@@ -1,0 +1,17 @@
+# parameters for train model
+
+PATH:
+  TRAIN_PATH: ./data/audio_100ms/audio_train.npy
+  MODEL_PATH: ./results/LSTM_audio_only.pth #this model will be made in path
+HYPERPARAMS:
+  MODELTYPE: 'LSTM'
+  HIDDEN_SIZE: 128
+  NUM_LAYERS: 2
+  NUM_CLASSES: 4
+  BATCH_SIZE: 128
+  NUM_EPOCHS: 10
+  LEARNING_RATE: 0.001
+  LABEL_CLASS: ['unknown','idling', 'cutting', 'hardcutting']
+  LEN_FRAME: 100
+FEATUREPARAMS:
+  SAMPLING_RATE: 44100

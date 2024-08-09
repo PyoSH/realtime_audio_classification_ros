@@ -1,0 +1,35 @@
+from yacs.config import CfgNode as CN
+
+_C = CN()
+
+_C.PATH= CN()
+_C.PATH.TRAIN_PATH = '../data/set_100ms/data_100ms.npy'
+_C.PATH.TEST_PATH = '../data/set_100ms/test_100ms.npy'
+_C.PATH.MODEL_PATH = '../results/model_100ms.pth'
+
+_C.HYPERPARAMS = CN()
+_C.HYPERPARAMS.MODELTYPE = 'LSTM'
+_C.HYPERPARAMS.HIDDEN_SIZE = 128
+_C.HYPERPARAMS.NUM_LAYERS = 2
+_C.HYPERPARAMS.NUM_CLASSES = 3
+_C.HYPERPARAMS.BATCH_SIZE = 128
+_C.HYPERPARAMS.NUM_EPOCHS = 4
+_C.HYPERPARAMS.LEARNING_RATE = 0.001
+_C.HYPERPARAMS.LABEL_CLASS = []
+_C.HYPERPARAMS.LEN_FRAME = 100
+
+_C.FEATUREPARAMS = CN()
+_C.FEATUREPARAMS.SAMPLING_RATE = 44100
+_C.FEATUREPARAMS.NUM_CEPSTRAL_COEFFICIENTS = 40
+_C.FEATUREPARAMS.HOP_LENGTH = 512
+_C.FEATUREPARAMS.LEN_WINDOW = 2048
+_C.FEATUREPARAMS.CHUNK = 2304
+
+def update_config(cfg, args):
+    cfg.defrost()
+    cfg.merge_from_file(args.cfg)
+
+    cfg.freeze()
+
+def check_config(cfg):
+    pass
