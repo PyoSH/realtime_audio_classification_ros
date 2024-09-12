@@ -44,48 +44,56 @@ model.load_state_dict(torch.load(cfg.PATH.MODEL_PATH))
 
 logger.info(f"model {model}")
 
-class AudioStreamDecoder:
-    def __init__(self):
-        logger.info("decodeing started...")
-        self.audio_stream = b''  # MP3 데이터를 버퍼링할 변수
-        self.chunk_size = 1024   # MP3 데이터를 일정 크기로 자를 때 사용
+class RealTimePredictor:
+    def __init__(self, dtype=None):
+        logger.info("started...")
+        self.audio_stream = b''
+        self.data_format = dtype
+        self.mp3_chunk_size = 1024   # MP3 데이터를 일정 크기로 자를 때 사용
+        self.pcm_chunk_size = 4410  # PCM 데이터를 일정 크기로 자를 때 사용
 
-        # ROS에서 audioData 토픽 구독
-        rospy.init_node('audio_stream_decoder', anonymous=True)
+        rospy.init_node('realTimePredictor', anonymous=True)
         rospy.Subscriber("/audio/audio_2", AudioData, self.audio_callback)
 
     def audio_callback(self, msg):
         # audioData 메시지에서 MP3 바이트 데이터를 수신
-        self.audio_stream += bytes(msg.data)
-        # logger.info(f"current mp3 data {len(msg.data)} total mp3 data {len(self.audio_stream)}")
+        # self.audio_stream += bytes(msg.data)
+        # logger.info(
+        #     f"current {self.data_format} data {len(msg.data)} total {self.data_format} data {len(self.audio_stream)}")
 
-        # 일정 크기의 데이터가 쌓이면 디코딩
-        if len(self.audio_stream) > self.chunk_size:
-            self.decode_mp3_stream()
+        if (self.data_format == 'mp3') and (len(self.audio_stream) >= self.mp3_chunk_size):
+            self.decode_stream()
+        elif (self.data_format == 'wave') and(len(self.audio_stream) >= self.pcm_chunk_size):
+            self.decode_stream()
+        else:
+            self.audio_stream += bytes(msg.data)
 
-    def decode_mp3_stream(self):
+    def decode_stream(self):
         try:
-            # 누적된 MP3 데이터를 miniaudio로 PCM으로 디코딩
-            pcm_data = miniaudio.decode(self.audio_stream)
+            curr_pcm = None
+            if self.data_format == 'mp3':
+                # 누적된 MP3 데이터를 miniaudio로 PCM으로 디코딩
+                pcm_data = miniaudio.decode(self.audio_stream)
+                curr_pcm = np.array(pcm_data.samples)
+            elif self.data_format == 'wave':
+                curr_pcm = np.frombuffer(self.audio_stream, dtype=np.int16)
+            else:
+                logger.error(f"{self.data_format} format is not usable")
+            # logger.info(f"current {self.data_format} data {len(self.audio_stream)}")
+            sliced_pcm = curr_pcm[:4410]
+            del(curr_pcm)
 
-            # PCM 프레임 수 출력
-            curr_pcm = np.array(pcm_data.samples)
-            # sliced_pcm = curr_pcm[:4410]
-            # del(curr_pcm)
-            
-            # 받은 MP3 데이터를 처리한 후 초기화 (혹은 사용한 만큼만 잘라내기)
+            self.predict_situation(sliced_pcm)
             self.audio_stream = b''
 
-            self.predict_situation(curr_pcm)
-        
         except Exception as e:
             rospy.logerr(f"Error decoding MP3 stream: {e}")
 
     def predict_situation(self, input_np):
         # 특징 추출
-        featureVector = get_frame_to_mfcc(input_np, samplingRate=mfcc_const.sr, num_cepstralCoefficient=mfcc_const.n_mfcc,
+        feature_vector = get_frame_to_mfcc(input_np, samplingRate=mfcc_const.sr, num_cepstralCoefficient=mfcc_const.n_mfcc,
                                         hop_length=mfcc_const.hop_length, len_fft=mfcc_const.len_fft)
-        input_tensor = torch.tensor(featureVector[:, :, :mfcc_const.n_mfcc], dtype=torch.float32)
+        input_tensor = torch.tensor(feature_vector[:, :, :mfcc_const.n_mfcc], dtype=torch.float32)
         
         # 모델 예측
         with torch.no_grad():
@@ -96,13 +104,13 @@ class AudioStreamDecoder:
         predicted_class = class_labels[predicted.item()]
         logger.info(f'Predicted: {predicted_class}, {predicted.item()}')
 
-
     def run(self):
         rospy.spin()
 
 if __name__ == '__main__':
     try:
-        decoder = AudioStreamDecoder()
-        decoder.run()
+        data_type = str(rospy.get_param('/audio/audio_capture/format'))
+        predictor = RealTimePredictor(data_type)
+        predictor.run()
     except rospy.ROSInterruptException:
         pass
