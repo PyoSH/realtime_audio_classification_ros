@@ -16,6 +16,6 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-catkin_install_python(PROGRAMS test_miniaudio.py
+catkin_install_python(PROGRAMS listen2topic.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

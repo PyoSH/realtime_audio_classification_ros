@@ -1,0 +1,7 @@
+1. 서버 켜기 & 분류 결과 ros 토픽으로 보내기
+rosrun cpos_work_classification listen2use.py
+
+2. 토픽 상세 사항
+topic name : work_situation_class
+topic rate : 19 Hz
+topic type : std_msgs::String
